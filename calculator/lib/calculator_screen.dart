@@ -12,6 +12,7 @@ class _calculatorScreenState extends State<calculatorScreen> {
   String number1 = "";
   String operand = "";
   String number2 = "";
+  int f = 0;
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -73,8 +74,8 @@ class _calculatorScreenState extends State<calculatorScreen> {
       return;
     }
     if (value == button.equal) {
-      print(number1);
       calculateExpr();
+      f = 1;
       return;
     }
     append(value);
@@ -87,7 +88,6 @@ class _calculatorScreenState extends State<calculatorScreen> {
 
     final double num1 = double.parse(number1);
     final double num2 = double.parse(number2);
-    print(num1);
     double result = 0.0;
     switch (operand) {
       case button.add:
@@ -105,14 +105,14 @@ class _calculatorScreenState extends State<calculatorScreen> {
       default:
     }
     setState(() {
-      number1 = "$result";
+      result == 0 ? number1 = "" : number1 = "$result";
       operand = "";
       number2 = "";
       if (number1.endsWith(".0")) {
         number1 = number1.substring(0, number1.length - 2);
-      } else if (number1.contains(".")) {
+      } else if (number1.contains(".") && !number1.contains("e")) {
         int i = number1.indexOf(".");
-        number1 = number1.substring(0, i + 3);
+        if (i <= number1.length - 5) number1 = number1.substring(0, i + 5);
       }
     });
   }
@@ -156,21 +156,42 @@ class _calculatorScreenState extends State<calculatorScreen> {
       if (operand.isNotEmpty && number2.isNotEmpty) {
         calculateExpr();
       }
-      operand = value;
+      if (number1.isEmpty || number1 == "-") {
+        if (value == button.div || value == button.mul || button.add == value) {
+          number1 = "0";
+          operand = value;
+        } else if (value == button.sub) {
+          number1 = "-";
+          operand = "";
+        }
+      } else if (operand.isNotEmpty && number2.isEmpty && value == button.sub) {
+        number2 = "-";
+      } else
+        operand = value;
     } else if (number1.isEmpty || operand.isEmpty) {
       if (value == button.decimal && number1.contains(button.decimal)) return;
-      if (value == button.decimal && number1.isEmpty || number1 == button.n0) {
+      if (value == button.decimal &&
+          (number1.isEmpty || number1 == button.n0)) {
         value = "0.";
       }
-      number1 += value;
+      if (f == 1) {
+        number1 = "";
+        f = 0;
+      }
+      (number1.isEmpty && value == button.n0) ? number1 = "" : number1 += value;
     } else if (number2.isEmpty || operand.isNotEmpty) {
       if (value == button.decimal && number2.contains(button.decimal)) return;
-      if (value == button.decimal && number2.isEmpty || number2 == button.n0) {
+      if (value == button.decimal &&
+          (number2.isEmpty || number2 == button.n0)) {
         value = "0.";
       }
-      number2 += value;
+      if (value == button.n0 && number2 == "-")
+        number2 = "0";
+      else
+        (number2 == "0") ? number2 = value : number2 += value;
     }
-    if (number1.endsWith(".")) {
+
+    if (number1.endsWith(".") && number1 != "0.") {
       if (value != button.decimal && int.tryParse(value) == null)
         number1 = number1 + "0";
     }
